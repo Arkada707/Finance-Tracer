@@ -22,7 +22,15 @@
                 <label for="monthly-bills">Monthly Bills:</label>
                 <input type="number" id="monthly-bills" placeholder="Enter monthly bills">
             </div>
-            
+
+            <div class="input-group">
+                <h3>Current Balance</h3>
+                <label for="bank-balance">Bank Balance:</label>
+                <input type="number" id="bank-balance" placeholder="Enter bank balance">
+                <label for="cash-balance">Cash Balance:</label>
+                <input type="number" id="cash-balance" placeholder="Enter cash balance">
+            </div>
+
             <div class="family-support">
                 <h3>Living Situation</h3>
                 <label>
@@ -39,6 +47,13 @@
         <section class="calendar-section">
             <h2>Daily Spending Calendar</h2>
             <div class="calendar" id="calendar"></div>
+            <div class="plan-controls">
+                <label>
+                    <input type="checkbox" id="enable-saving">
+                    Enable Saving Mode
+                </label>
+                <button id="plan-button">Generate Plan</button>
+            </div>
         </section>
 
         <section class="metrics-section">
@@ -51,8 +66,10 @@
             </div>
         </section>
 
-        <button id="save-button">Save Data</button>
-        <button id="download-button">Download Data (CSV)</button>
+        <div class="action-buttons">
+            <button id="save-button">Save Data</button>
+            <button id="download-button">Download Data (CSV)</button>
+        </div>
     </div>
 
     <script src="index.js"></script>

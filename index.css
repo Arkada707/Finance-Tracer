@@ -1,3 +1,33 @@
+.plan-controls {
+    margin-top: 15px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.action-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.input-group h3 {
+    margin: 10px 0;
+    color: #666;
+}
+
+.calendar-day.green {
+    background-color: #cfc !important;
+}
+
+.calendar-day.orange {
+    background-color: #ffd8b1 !important;
+}
+
+.calendar-day.red {
+    background-color: #ffb3ba !important;
+}
+
 .container {
     max-width: 1200px;
     margin: 0 auto;
