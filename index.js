@@ -1,218 +1,261 @@
-let monthlyIncome = 0;
-let monthlyBills = 0;
-let familySupport = { liveWithFamily: false, foodSupport: false };
-let spendingData = {};
-let balance = { bank: 0, cash: 0 };
+const DateTime = luxon.DateTime;
+let currentDate = DateTime.local();
+let financialState = {
+    monthlyIncome: 0,
+    monthlyBills: 0,
+    balances: { bank: 0, cash: 0 },
+    familySupport: { liveWithFamily: false, foodSupport: false },
+    spendingData: {},
+    savings: {
+        enabled: false,
+        percentage: 20,
+        dailySavings: {},
+        totalSaved: 0
+    },
+    incomePaymentDate: DateTime.local().toISODate(),
+    billsPaid: false
+};
+
 let balanceChart, expenseChart;
-let enableSaving = false;
 
-// Initialize charts
-function initCharts() {
-    // Balance Meter (Gauge Chart)
-    const balanceCtx = document.getElementById('balanceChart').getContext('2d');
-    balanceChart = new Chart(balanceCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Bank', 'Cash'],
-            datasets: [{
-                data: [balance.bank, balance.cash],
-                backgroundColor: ['#4CAF50', '#2196F3']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Current Balance'
-                }
-            }
-        }
-    });
-
-    // Expense Chart
-    const expenseCtx = document.getElementById('expenseChart').getContext('2d');
-    expenseChart = new Chart(expenseCtx, {
-        type: 'pie',
-        data: {
-            labels: [],
-            datasets: [{
-                data: [],
-                backgroundColor: []
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Expense Distribution'
-                }
-            }
-        }
-    });
-}
-
-// Calendar functions
+// Calendar initialization
 function createCalendar() {
     const calendar = document.getElementById('calendar');
     calendar.innerHTML = '';
-    const daysInMonth = 31;
+    
+    const daysInMonth = currentDate.daysInMonth;
+    const firstDay = currentDate.startOf('month').weekday;
+
+    // Create empty days for calendar grid
+    for (let i = 1; i < firstDay; i++) {
+        calendar.appendChild(createEmptyDay());
+    }
 
     for (let day = 1; day <= daysInMonth; day++) {
         const dayElement = document.createElement('div');
-        dayElement.classList.add('calendar-day');
-        dayElement.textContent = day;
+        dayElement.className = 'calendar-day';
+        dayElement.dataset.day = day;
         
-        if (spendingData[day]) {
-            dayElement.innerHTML += `<br>$${spendingData[day]}`;
-        }
+        const date = currentDate.set({ day });
+        const isPast = date < DateTime.local().startOf('day');
+        const isIncomeDay = date.toISODate() === financialState.incomePaymentDate;
+        
+        dayElement.innerHTML = `
+            <div class="day-header ${isIncomeDay ? 'income-day' : ''}">${day}</div>
+            <div class="day-content">
+                ${financialState.spendingData[day] ? `
+                    <div class="spent">$${financialState.spendingData[day]}</div>
+                    ${financialState.savings.dailySavings[day] ? `
+                        <div class="saved">+$${financialState.savings.dailySavings[day]}</div>
+                    ` : ''}
+                ` : ''}
+            </div>
+        `;
 
-        dayElement.addEventListener('click', () => {
-            const amount = prompt(`Enter amount spent on day ${day}:`, spendingData[day] || '');
-            if (amount !== null) {
-                spendingData[day] = Number(amount);
-                dayElement.innerHTML = `${day}<br>$${amount}`;
-                updateExpenseChart();
-            }
-        });
+        if (isPast) dayElement.classList.add('past-day');
+        if (isIncomeDay) dayElement.classList.add('income-day');
         
+        dayElement.addEventListener('click', () => handleDayClick(day));
         calendar.appendChild(dayElement);
+    }
+
+    document.getElementById('current-month').textContent = currentDate.toFormat('MMMM yyyy');
+}
+
+function handleDayClick(day) {
+    const spent = financialState.spendingData[day] || 0;
+    const input = prompt(`Enter daily spending for ${currentDate.set({ day }).toFormat('dd/MM')}:`, spent);
+    
+    if (input !== null) {
+        const amount = parseFloat(input) || 0;
+        financialState.spendingData[day] = amount;
+        updateSavingsCalculations();
+        createCalendar();
+        updateExpenseChart();
     }
 }
 
-function updateExpenseChart() {
-    const amounts = Object.values(spendingData);
-    const total = amounts.reduce((sum, num) => sum + num, 0);
+// Enhanced planning algorithm
+function generateFinancialPlan() {
+    const incomeDate = DateTime.fromISO(financialState.incomePaymentDate);
+    const today = DateTime.local();
     
-    expenseChart.data.labels = Object.keys(spendingData).map(d => `Day ${d}`);
-    expenseChart.data.datasets[0].data = amounts;
-    expenseChart.data.datasets[0].backgroundColor = amounts.map(() => 
-        `#${Math.floor(Math.random()*16777215).toString(16)}`
-    );
+    // Calculate available funds
+    let availableFunds = financialState.balances.bank + financialState.balances.cash;
     
-    expenseChart.update();
-}
+    if (today >= incomeDate.startOf('day')) {
+        availableFunds += financialState.monthlyIncome;
+    }
+    
+    if (!financialState.billsPaid) {
+        availableFunds -= financialState.monthlyBills;
+    }
+    
+    // Calculate remaining days
+    const daysInMonth = currentDate.daysInMonth;
+    const daysPassed = Math.min(today.day, daysInMonth);
+    const remainingDays = daysInMonth - daysPassed;
 
-// Planning function
-function generatePlan() {
-    const income = Number(document.getElementById('monthly-income').value) || 0;
-    const bills = Number(document.getElementById('monthly-bills').value) || 0;
-    const daysLeft = 31 - new Date().getDate();
-    let available = income - bills;
-    
-    // Adjust for family support
-    if (familySupport.foodSupport) available += (300); // Assuming $300 food cost
-    
-    // Deduct existing spending
-    const spent = Object.values(spendingData).reduce((a, b) => a + b, 0);
-    available -= spent;
-    
     // Calculate daily allowance
-    let dailyAllowance = available / daysLeft;
-    if (enableSaving) dailyAllowance *= 0.8; // Save 20%
+    const spent = Object.values(financialState.spendingData).reduce((a, b) => a + b, 0);
+    const dailyAllowance = (availableFunds - spent) / remainingDays;
+    
+    // Calculate savings
+    const savingsPercentage = financialState.savings.enabled ? 
+        financialState.savings.percentage / 100 : 0;
+    
+    let totalPotentialSavings = 0;
+    financialState.savings.dailySavings = {};
 
-    // Color coding logic
-    const today = new Date().getDate();
     document.querySelectorAll('.calendar-day').forEach(dayEl => {
-        const day = parseInt(dayEl.textContent);
-        if (day < today) return;
+        const day = parseInt(dayEl.dataset.day);
+        if (day <= daysPassed) return;
 
-        const spent = spendingData[day] || 0;
-        const remaining = dailyAllowance - spent;
+        const spent = financialState.spendingData[day] || 0;
+        const maxSpend = dailyAllowance * (1 - savingsPercentage);
+        const savings = Math.max(dailyAllowance - spent, 0) * savingsPercentage;
         
+        financialState.savings.dailySavings[day] = savings.toFixed(2);
+        totalPotentialSavings += savings;
+
         dayEl.classList.remove('green', 'orange', 'red');
-        if (remaining >= dailyAllowance * 0.5) {
+        
+        if (spent <= maxSpend * 0.75) {
             dayEl.classList.add('green');
-        } else if (remaining > 0) {
+        } else if (spent <= maxSpend) {
             dayEl.classList.add('orange');
         } else {
             dayEl.classList.add('red');
         }
     });
+
+    financialState.savings.totalSaved = totalPotentialSavings.toFixed(2);
+    updateSavingsDisplay();
+}
+
+function updateSavingsDisplay() {
+    const savingsHtml = `
+        <div class="savings-report">
+            <h3>Savings Projection</h3>
+            <p>Daily Savings Target: ${financialState.savings.percentage}%</p>
+            <p>Projected Monthly Savings: $${financialState.savings.totalSaved}</p>
+        </div>
+    `;
+    document.getElementById('savings-summary').innerHTML = savingsHtml;
 }
 
 // Data persistence
-function saveData() {
-    const data = {
-        monthlyIncome: document.getElementById('monthly-income').value,
-        monthlyBills: document.getElementById('monthly-bills').value,
-        familySupport,
-        spendingData,
-        balance,
-        enableSaving
+function saveFinancialState() {
+    const state = {
+        ...financialState,
+        incomePaymentDate: financialState.incomePaymentDate,
+        currentDate: currentDate.toISO()
     };
     
-    document.cookie = `financeData=${JSON.stringify(data)}; expires=${new Date(Date.now() + 86400e3).toUTCString()}`;
-    updateBalanceChart();
-    alert('Data saved!');
+    localStorage.setItem('financialState', JSON.stringify(state));
+    showStatus('Data saved successfully!', 'success');
 }
 
-function loadData() {
-    const cookie = document.cookie.split('; ').find(row => row.startsWith('financeData='));
-    if (!cookie) return;
+function loadFinancialState() {
+    const savedState = localStorage.getItem('financialState');
+    if (!savedState) return;
+
+    const state = JSON.parse(savedState);
+    currentDate = DateTime.fromISO(state.currentDate);
     
-    const data = JSON.parse(cookie.split('=')[1]);
-    document.getElementById('monthly-income').value = data.monthlyIncome;
-    document.getElementById('monthly-bills').value = data.monthlyBills;
-    familySupport = data.familySupport;
-    spendingData = data.spendingData;
-    balance = data.balance;
-    enableSaving = data.enableSaving;
-    
-    document.getElementById('bank-balance').value = balance.bank;
-    document.getElementById('cash-balance').value = balance.cash;
-    document.getElementById('enable-saving').checked = enableSaving;
-    document.getElementById('live-with-family').checked = familySupport.liveWithFamily;
-    document.getElementById('family-support-food').checked = familySupport.foodSupport;
-    
+    // Restore form values
+    document.getElementById('monthly-income').value = state.monthlyIncome;
+    document.getElementById('monthly-bills').value = state.monthlyBills;
+    document.getElementById('bank-balance').value = state.balances.bank;
+    document.getElementById('cash-balance').value = state.balances.cash;
+    document.getElementById('income-date').value = state.incomePaymentDate;
+    document.getElementById('bills-paid').checked = state.billsPaid;
+    document.getElementById('live-with-family').checked = state.familySupport.liveWithFamily;
+    document.getElementById('family-support-food').checked = state.familySupport.foodSupport;
+    document.getElementById('enable-saving').checked = state.savings.enabled;
+    document.getElementById('saving-percent').value = state.savings.percentage;
+
+    financialState = state;
     createCalendar();
-    updateBalanceChart();
+    updateCharts();
+    showStatus('Previous session restored!', 'success');
 }
 
-function updateBalanceChart() {
-    balance.bank = Number(document.getElementById('bank-balance').value) || 0;
-    balance.cash = Number(document.getElementById('cash-balance').value) || 0;
-    
-    balanceChart.data.datasets[0].data = [balance.bank, balance.cash];
-    balanceChart.update();
-}
-
-// CSV handling
-function downloadCSV() {
+// Enhanced CSV handling
+function exportToCSV() {
     const csvContent = [
-        ['Monthly Income', monthlyIncome],
-        ['Monthly Bills', monthlyBills],
-        ['Bank Balance', balance.bank],
-        ['Cash Balance', balance.cash],
-        ['Days,Amount']
+        ['Category', 'Value'],
+        ['Monthly Income', financialState.monthlyIncome],
+        ['Monthly Bills', financialState.monthlyBills],
+        ['Bank Balance', financialState.balances.bank],
+        ['Cash Balance', financialState.balances.cash],
+        ['Savings Percentage', financialState.savings.percentage],
+        ['Projected Savings', financialState.savings.totalSaved],
+        ['Day,Spent,Saved']
     ].concat(
-        Object.entries(spendingData).map(([day, amount]) => [day, amount])
+        Object.entries(financialState.spendingData).map(([day, spent]) => [
+            day,
+            spent,
+            financialState.savings.dailySavings[day] || '0.00'
+        ])
     ).map(row => row.join(',')).join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'financial_data.csv';
-    a.click();
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.href = url;
+    link.download = `financial_report_${currentDate.toFormat('yyyy-MM')}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
 }
 
-// Event listeners
-document.getElementById('save-button').addEventListener('click', saveData);
-document.getElementById('download-button').addEventListener('click', downloadCSV);
-document.getElementById('plan-button').addEventListener('click', generatePlan);
-document.getElementById('enable-saving').addEventListener('change', (e) => {
-    enableSaving = e.target.checked;
-});
-document.getElementById('live-with-family').addEventListener('change', (e) => {
-    familySupport.liveWithFamily = e.target.checked;
-});
-document.getElementById('family-support-food').addEventListener('change', (e) => {
-    familySupport.foodSupport = e.target.checked;
+// UI Helpers
+function showStatus(message, type = 'info') {
+    const statusBar = document.getElementById('status-bar');
+    statusBar.textContent = message;
+    statusBar.className = `status-${type}`;
+    setTimeout(() => statusBar.className = '', 3000);
+}
+
+// Event Listeners
+document.getElementById('plan-button').addEventListener('click', () => {
+    financialState.monthlyIncome = parseFloat(document.getElementById('monthly-income').value) || 0;
+    financialState.monthlyBills = parseFloat(document.getElementById('monthly-bills').value) || 0;
+    financialState.balances.bank = parseFloat(document.getElementById('bank-balance').value) || 0;
+    financialState.balances.cash = parseFloat(document.getElementById('cash-balance').value) || 0;
+    financialState.incomePaymentDate = document.getElementById('income-date').value;
+    financialState.billsPaid = document.getElementById('bills-paid').checked;
+    financialState.familySupport.liveWithFamily = document.getElementById('live-with-family').checked;
+    financialState.familySupport.foodSupport = document.getElementById('family-support-food').checked;
+    financialState.savings.enabled = document.getElementById('enable-saving').checked;
+    financialState.savings.percentage = parseFloat(document.getElementById('saving-percent').value) || 20;
+
+    generateFinancialPlan();
 });
 
-// Initialization
-initCharts();
-loadData();
-createCalendar();
+document.getElementById('enable-saving').addEventListener('change', (e) => {
+    document.getElementById('saving-percent').disabled = !e.target.checked;
+});
+
+document.getElementById('prev-month').addEventListener('click', () => {
+    currentDate = currentDate.minus({ months: 1 });
+    createCalendar();
+});
+
+document.getElementById('next-month').addEventListener('click', () => {
+    currentDate = currentDate.plus({ months: 1 });
+    createCalendar();
+});
+
+document.getElementById('save-button').addEventListener('click', saveFinancialState);
+document.getElementById('download-button').addEventListener('click', exportToCSV);
+
+// Initialize
+function init() {
+    loadFinancialState();
+    createCalendar();
+    initCharts();
+}
+
+window.onload = init;
