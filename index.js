@@ -22,9 +22,9 @@ let balanceChart, expenseChart;
 function createCalendar() {
     const calendar = document.getElementById('calendar');
     calendar.innerHTML = '';
-    
+
     const daysInMonth = currentDate.daysInMonth;
-    const firstDay = currentDate.startOf('month').weekday;
+    const firstDay = currentDate.startOf('month').weekday; // 1 = Monday, 7 = Sunday
 
     // Create empty days for calendar grid
     for (let i = 1; i < firstDay; i++) {
@@ -35,11 +35,11 @@ function createCalendar() {
         const dayElement = document.createElement('div');
         dayElement.className = 'calendar-day';
         dayElement.dataset.day = day;
-        
+
         const date = currentDate.set({ day });
         const isPast = date < DateTime.local().startOf('day');
         const isIncomeDay = date.toISODate() === financialState.incomePaymentDate;
-        
+
         dayElement.innerHTML = `
             <div class="day-header ${isIncomeDay ? 'income-day' : ''}">${day}</div>
             <div class="day-content">
@@ -54,11 +54,12 @@ function createCalendar() {
 
         if (isPast) dayElement.classList.add('past-day');
         if (isIncomeDay) dayElement.classList.add('income-day');
-        
+
         dayElement.addEventListener('click', () => handleDayClick(day));
         calendar.appendChild(dayElement);
     }
 
+    // Update the current month display
     document.getElementById('current-month').textContent = currentDate.toFormat('MMMM yyyy');
 }
 

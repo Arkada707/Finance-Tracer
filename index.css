@@ -116,22 +116,13 @@ input[type="text"]:focus {
 .calendar {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 0.5rem;
-    background: #fff;
-    padding: 1rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .calendar-day {
-    background: #f8f9fa;
-    border-radius: 8px;
-    padding: 1rem;
-    min-height: 100px;
-    display: flex;
-    flex-direction: column;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
+    border: 1px solid #ccc;
+    padding: 10px;
+    text-align: center;
+    position: relative;
 }
 
 .calendar-day:hover {
@@ -164,7 +155,7 @@ input[type="text"]:focus {
 }
 
 .income-day {
-    background-color: #e8f4ff;
+    background-color: #d1e7dd;
     border: 2px solid var(--secondary-color);
 }
 
@@ -184,7 +175,6 @@ input[type="text"]:focus {
 }
 
 .past-day {
-    opacity: 0.6;
     background-color: #f0f0f0;
     cursor: not-allowed;
 }
