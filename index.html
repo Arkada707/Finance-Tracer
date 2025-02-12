@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finance Tracker</title>
+    <link rel="stylesheet" href="index.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Finance Tracker</h1>
+        
+        <section class="input-section">
+            <h2>Monthly Information</h2>
+            <div class="input-group">
+                <label for="monthly-income">Monthly Income:</label>
+                <input type="number" id="monthly-income" placeholder="Enter monthly income">
+            </div>
+            
+            <div class="input-group">
+                <label for="monthly-bills">Monthly Bills:</label>
+                <input type="number" id="monthly-bills" placeholder="Enter monthly bills">
+            </div>
+            
+            <div class="family-support">
+                <h3>Living Situation</h3>
+                <label>
+                    <input type="checkbox" id="live-with-family">
+                    I live with family
+                </label>
+                <label>
+                    <input type="checkbox" id="family-support-food">
+                    Family supports food expenses
+                </label>
+            </div>
+        </section>
+
+        <section class="calendar-section">
+            <h2>Daily Spending Calendar</h2>
+            <div class="calendar" id="calendar"></div>
+        </section>
+
+        <section class="metrics-section">
+            <h2>Financial Metrics</h2>
+            <div class="balance-meter">
+                <canvas id="balanceChart"></canvas>
+            </div>
+            <div class="expense-chart">
+                <canvas id="expenseChart"></canvas>
+            </div>
+        </section>
+
+        <button id="save-button">Save Data</button>
+        <button id="download-button">Download Data (CSV)</button>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+</html>
