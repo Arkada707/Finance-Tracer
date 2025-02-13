@@ -1,333 +1,148 @@
-const DateTime = luxon.DateTime;
-let currentDate = DateTime.local();
-let financialState = {
-    monthlyIncome: 0,
-    monthlyBills: 0,
-    balances: { bank: 0, cash: 0 },
-    familySupport: { liveWithFamily: false, foodSupport: false },
-    spendingData: {},
-    savings: {
-        enabled: false,
-        percentage: 20,
-        dailySavings: {},
-        totalSaved: 0
-    },
-    incomePaymentDate: DateTime.local().toISODate(),
-    billsPaid: false
-};
+document.addEventListener('DOMContentLoaded', () => {
+    // Get references to HTML elements
+    const incomeInput = document.getElementById('income');
+    const incomeDateInput = document.getElementById('income-date');
+    const expensesList = document.getElementById('expenses-list');
+    const addExpenseButton = document.getElementById('add-expense-button');
+    const savingsGoalInput = document.getElementById('savings-goal');
+    const savingsTargetDateInput = document.getElementById('savings-target-date');
+    const savingsSummary = document.getElementById('savings-summary');
+    const summarySection = document.getElementById('summary');
+    const suggestionsSection = document.getElementById('suggestions');
 
-let balanceChart, expenseChart;
+    // Initialize data
+    let expenses = [];
+    let savingsGoal = 0;
+    let targetDate = null;
+    let income = 0;
+    let incomeDate = null;
 
-// Calendar initialization
-function createCalendar() {
-    const calendar = document.getElementById('calendar');
-    calendar.innerHTML = '';
-    
-    const daysInMonth = currentDate.daysInMonth;
-    const firstDay = currentDate.startOf('month').weekday; // 1 (Monday) to 7 (Sunday)
-
-    // Create empty placeholder days for the first week
-    for (let i = 1; i < firstDay; i++) {
-        calendar.appendChild(createEmptyDay());
-    }
-
-    // Create days for the current month
-    for (let day = 1; day <= daysInMonth; day++) {
-        const dayElement = document.createElement('div');
-        dayElement.className = 'calendar-day';
-        dayElement.dataset.day = day;
-        
-        const date = currentDate.set({ day });
-        const isPast = date < DateTime.local().startOf('day');
-        const isIncomeDay = date.toISODate() === financialState.incomePaymentDate;
-        
-        dayElement.innerHTML = `
-            <div class="day-header ${isIncomeDay ? 'income-day' : ''}">${day}</div>
-            <div class="day-content">
-                ${financialState.spendingData[day] ? `
-                    <div class="spent">$${financialState.spendingData[day]}</div>
-                    ${financialState.savings.dailySavings[day] ? `
-                        <div class="saved">+$${financialState.savings.dailySavings[day]}</div>
-                    ` : ''}
-                ` : ''}
-            </div>
-        `;
-
-        if (isPast) dayElement.classList.add('past-day');
-        if (isIncomeDay) dayElement.classList.add('income-day');
-        
-        dayElement.addEventListener('click', () => handleDayClick(day));
-        calendar.appendChild(dayElement);
-    }
-
-    document.getElementById('current-month').textContent = currentDate.toFormat('MMMM yyyy');
-}
-
-function createEmptyDay() {
-    const emptyDay = document.createElement('div');
-    emptyDay.classList.add('calendar-day', 'empty-day');
-    return emptyDay;
-}
-
-function handleDayClick(day) {
-    const spent = financialState.spendingData[day] || 0;
-    const input = prompt(`Enter daily spending for ${currentDate.set({ day }).toFormat('dd/MM')}:`, spent);
-    
-    if (input !== null) {
-        const amount = parseFloat(input) || 0;
-        financialState.spendingData[day] = amount;
-        updateSavingsCalculations();
-        createCalendar();
-        updateExpenseChart();
-    }
-}
-
-// Enhanced planning algorithm
-function generateFinancialPlan() {
-    const incomeDate = DateTime.fromISO(financialState.incomePaymentDate);
-    const today = DateTime.local();
-    
-    // Calculate available funds
-    let availableFunds = financialState.balances.bank + financialState.balances.cash;
-    
-    if (today >= incomeDate.startOf('day')) {
-        availableFunds += financialState.monthlyIncome;
-    }
-    
-    if (!financialState.billsPaid) {
-        availableFunds -= financialState.monthlyBills;
-    }
-    
-    // Calculate remaining days
-    const daysInMonth = currentDate.daysInMonth;
-    const daysPassed = Math.min(today.day, daysInMonth);
-    const remainingDays = daysInMonth - daysPassed;
-
-    // Calculate daily allowance
-    const spent = Object.values(financialState.spendingData).reduce((a, b) => a + b, 0);
-    const dailyAllowance = (availableFunds - spent) / remainingDays;
-    
-    // Calculate savings
-    const savingsPercentage = financialState.savings.enabled ? 
-        financialState.savings.percentage / 100 : 0;
-    
-    let totalPotentialSavings = 0;
-    financialState.savings.dailySavings = {};
-
-    document.querySelectorAll('.calendar-day').forEach(dayEl => {
-        const day = parseInt(dayEl.dataset.day);
-        if (day <= daysPassed) return;
-
-        const spent = financialState.spendingData[day] || 0;
-        const maxSpend = dailyAllowance * (1 - savingsPercentage);
-        const savings = Math.max(dailyAllowance - spent, 0) * savingsPercentage;
-        
-        financialState.savings.dailySavings[day] = savings.toFixed(2);
-        totalPotentialSavings += savings;
-
-        dayEl.classList.remove('green', 'orange', 'red');
-        
-        if (spent <= maxSpend * 0.75) {
-            dayEl.classList.add('green');
-        } else if (spent <= maxSpend) {
-            dayEl.classList.add('orange');
-        } else {
-            dayEl.classList.add('red');
+    // Function to add an expense
+    const addExpense = () => {
+        const expenseName = prompt('Enter expense name:');
+        if (!expenseName) return;
+        const expenseAmount = parseFloat(prompt('Enter expense amount:'));
+        if (isNaN(expenseAmount) || expenseAmount <= 0) {
+            alert('Please enter a valid expense amount.');
+            return;
         }
-    });
 
-    financialState.savings.totalSaved = totalPotentialSavings.toFixed(2);
-    updateSavingsDisplay();
-}
-
-function updateSavingsDisplay() {
-    const savingsHtml = `
-        <div class="savings-report">
-            <h3>Savings Projection</h3>
-            <p>Daily Savings Target: ${financialState.savings.percentage}%</p>
-            <p>Projected Monthly Savings: $${financialState.savings.totalSaved}</p>
-        </div>
-    `;
-    document.getElementById('savings-summary').innerHTML = savingsHtml;
-}
-
-// Data persistence
-function saveFinancialState() {
-    const state = {
-        ...financialState,
-        incomePaymentDate: financialState.incomePaymentDate,
-        currentDate: currentDate.toISO()
+        expenses.push({ name: expenseName, amount: expenseAmount });
+        renderExpenses();
+        updateSummary();
+        updateSuggestions();
     };
-    
-    localStorage.setItem('financialState', JSON.stringify(state));
-    showStatus('Data saved successfully!', 'success');
-}
 
-function loadFinancialState() {
-    const savedState = localStorage.getItem('financialState');
-    if (!savedState) return;
+    // Function to render expenses
+    const renderExpenses = () => {
+        expensesList.innerHTML = '';
+        expenses.forEach((expense, index) => {
+            const expenseItem = document.createElement('div');
+            expenseItem.classList.add('expense-item');
+            expenseItem.innerHTML = `
+                <span>${expense.name}: $${expense.amount.toFixed(2)}</span>
+                <button data-index="${index}">Delete</button>
+            `;
+            expensesList.appendChild(expenseItem);
 
-    const state = JSON.parse(savedState);
-    currentDate = DateTime.fromISO(state.currentDate);
-    
-    // Restore form values
-    document.getElementById('monthly-income').value = state.monthlyIncome;
-    document.getElementById('monthly-bills').value = state.monthlyBills;
-    document.getElementById('bank-balance').value = state.balances.bank;
-    document.getElementById('cash-balance').value = state.balances.cash;
-    document.getElementById('income-date').value = state.incomePaymentDate;
-    document.getElementById('bills-paid').checked = state.billsPaid;
-    document.getElementById('live-with-family').checked = state.familySupport.liveWithFamily;
-    document.getElementById('family-support-food').checked = state.familySupport.foodSupport;
-    document.getElementById('enable-saving').checked = state.savings.enabled;
-    document.getElementById('saving-percent').value = state.savings.percentage;
+            // Add event listener to delete button
+            expenseItem.querySelector('button').addEventListener('click', (e) => {
+                const indexToDelete = parseInt(e.target.dataset.index);
+                expenses.splice(indexToDelete, 1);
+                renderExpenses();
+                updateSummary();
+                updateSuggestions();
+            });
+        });
+    };
 
-    financialState = state;
-    createCalendar();
-    initCharts(); // Initialize charts before updating
-    updateCharts(); // Update charts after loading data
-    showStatus('Previous session restored!', 'success');
-}
+    // Function to update the financial summary
+    const updateSummary = () => {
+        income = parseFloat(incomeInput.value) || 0;
+        incomeDate = incomeDateInput.value;
+        const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const remainingBalance = income - totalExpenses;
 
-// Enhanced CSV handling
-function exportToCSV() {
-    const csvContent = [
-        ['Category', 'Value'],
-        ['Monthly Income', financialState.monthlyIncome],
-        ['Monthly Bills', financialState.monthlyBills],
-        ['Bank Balance', financialState.balances.bank],
-        ['Cash Balance', financialState.balances.cash],
-        ['Savings Percentage', financialState.savings.percentage],
-        ['Projected Savings', financialState.savings.totalSaved],
-        ['Day,Spent,Saved']
-    ].concat(
-        Object.entries(financialState.spendingData).map(([day, spent]) => [
-            day,
-            spent,
-            financialState.savings.dailySavings[day] || '0.00'
-        ])
-    ).map(row => row.join(',')).join('\n');
+        summarySection.innerHTML = `
+            <h2>Financial Summary</h2>
+            <p>Income: $${income.toFixed(2)}</p>
+            <p>Total Expenses: $${totalExpenses.toFixed(2)}</p>
+            <p>Remaining Balance: $${remainingBalance.toFixed(2)}</p>
+        `;
+    };
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.href = url;
-    link.download = `financial_report_${currentDate.toFormat('yyyy-MM')}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-}
+    // Function to update savings summary
+    const updateSavingsSummary = () => {
+        savingsGoal = parseFloat(savingsGoalInput.value) || 0;
+        targetDate = savingsTargetDateInput.value;
 
-// UI Helpers
-function showStatus(message, type = 'info') {
-    const statusBar = document.getElementById('status-bar');
-    statusBar.textContent = message;
-    statusBar.className = `status-${type}`;
-    setTimeout(() => statusBar.className = '', 3000);
-}
+        if (savingsGoal && targetDate) {
+            savingsSummary.innerHTML = `
+                <h2>Savings Summary</h2>
+                <p>Savings Goal: $${savingsGoal.toFixed(2)}</p>
+                <p>Target Date: ${targetDate}</p>
+                <p>Progress: Calculating...</p>
+            `;
+            // Add savings progress calculation here
+            calculateSavingsProgress();
+        } else {
+            savingsSummary.innerHTML = '';
+        }
+    };
 
-// Event Listeners
-document.getElementById('plan-button').addEventListener('click', () => {
-    financialState.monthlyIncome = parseFloat(document.getElementById('monthly-income').value) || 0;
-    financialState.monthlyBills = parseFloat(document.getElementById('monthly-bills').value) || 0;
-    financialState.balances.bank = parseFloat(document.getElementById('bank-balance').value) || 0;
-    financialState.balances.cash = parseFloat(document.getElementById('cash-balance').value) || 0;
-    financialState.incomePaymentDate = document.getElementById('income-date').value;
-    financialState.billsPaid = document.getElementById('bills-paid').checked;
-    financialState.familySupport.liveWithFamily = document.getElementById('live-with-family').checked;
-    financialState.familySupport.foodSupport = document.getElementById('family-support-food').checked;
-    financialState.savings.enabled = document.getElementById('enable-saving').checked;
-    financialState.savings.percentage = parseFloat(document.getElementById('saving-percent').value) || 20;
+    // Function to calculate savings progress
+    const calculateSavingsProgress = () => {
+        const income = parseFloat(incomeInput.value) || 0;
+        const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const remainingBalance = income - totalExpenses;
+        const savings = remainingBalance; // Simplified savings calculation
 
-    generateFinancialPlan();
-});
+        const savingsSummaryElement = document.getElementById('savings-summary');
+        if (savingsSummaryElement) {
+            savingsSummaryElement.innerHTML = `
+                <h2>Savings Summary</h2>
+                <p>Savings Goal: $${savingsGoal.toFixed(2)}</p>
+                <p>Target Date: ${targetDate}</p>
+                <p>Current Savings: $${savings.toFixed(2)}</p>
+                <p>Progress: ${((savings / savingsGoal) * 100).toFixed(2)}%</p>
+            `;
+        }
+    };
 
-document.getElementById('enable-saving').addEventListener('change', (e) => {
-    document.getElementById('saving-percent').disabled = !e.target.checked;
-});
+    // Function to generate suggestions
+    const updateSuggestions = () => {
+        const income = parseFloat(incomeInput.value) || 0;
+        const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const remainingBalance = income - totalExpenses;
 
-document.getElementById('prev-month').addEventListener('click', () => {
-    currentDate = currentDate.minus({ months: 1 });
-    createCalendar();
-});
+        let suggestionsHTML = '<h2>Suggestions</h2>';
+        if (remainingBalance < 0) {
+            suggestionsHTML += '<p>Consider reducing expenses or finding additional income sources.</p>';
+        } else if (remainingBalance > 500) {
+            suggestionsHTML += '<p>You have a healthy balance. Consider saving or investing.</p>';
+        } else {
+            suggestionsHTML += '<p>Keep up the good work!</p>';
+        }
 
-document.getElementById('next-month').addEventListener('click', () => {
-    currentDate = currentDate.plus({ months: 1 });
-    createCalendar();
-});
-
-document.getElementById('save-button').addEventListener('click', saveFinancialState);
-document.getElementById('download-button').addEventListener('click', exportToCSV);
-
-function initCharts() {
-    // Balance Chart (Doughnut)
-    const balanceCtx = document.getElementById('balanceChart').getContext('2d');
-    balanceChart = new Chart(balanceCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Bank', 'Cash'],
-            datasets: [{
-                data: [financialState.balances.bank, financialState.balances.cash],
-                backgroundColor: ['#4CAF50', '#2196F3']
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Current Balance'
-                }
+        if (savingsGoal && targetDate) {
+            const savings = remainingBalance;
+            if (savings < savingsGoal * 0.25) {
+                suggestionsHTML += '<p>Consider increasing your savings contributions.</p>';
             }
         }
-    });
 
-    // Expense Chart (Pie)
-    const expenseCtx = document.getElementById('expenseChart').getContext('2d');
-    expenseChart = new Chart(expenseCtx, {
-        type: 'pie',
-        data: {
-            labels: [],
-            datasets: [{
-                data: [],
-                backgroundColor: []
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                title: {
-                    display: true,
-                    text: 'Expense Distribution'
-                }
-            }
-        }
-    });
-}
+        suggestionsSection.innerHTML = suggestionsHTML;
+    };
 
-function updateCharts() {
-    // Update Balance Chart
-    balanceChart.data.datasets[0].data = [financialState.balances.bank, financialState.balances.cash];
-    balanceChart.update();
+    // Event listeners
+    addExpenseButton.addEventListener('click', addExpense);
+    incomeInput.addEventListener('input', updateSummary);
+    incomeDateInput.addEventListener('input', updateSummary);
+    savingsGoalInput.addEventListener('input', updateSavingsSummary);
+    savingsTargetDateInput.addEventListener('input', updateSavingsSummary);
 
-    // Update Expense Chart
-    const amounts = Object.values(financialState.spendingData);
-    const total = amounts.reduce((sum, num) => sum + num, 0);
-    
-    expenseChart.data.labels = Object.keys(financialState.spendingData).map(d => `Day ${d}`);
-    expenseChart.data.datasets[0].data = amounts;
-    expenseChart.data.datasets[0].backgroundColor = amounts.map(() => 
-        `#${Math.floor(Math.random()*16777215).toString(16)}`
-    );
-    
-    expenseChart.update();
-}
-
-// Initialize
-function init() {
-    loadFinancialState();
-    createCalendar();
-    initCharts();
-}
-
-window.onload = init;
+    // Initial render
+    updateSummary();
+    updateSavingsSummary();
+    updateSuggestions();
+});

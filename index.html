@@ -3,108 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Advanced Finance Tracker</title>
+    <title>Finance Tracker</title>
     <link rel="stylesheet" href="index.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/luxon@3.3.0/build/global/luxon.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>Advanced Finance Tracker</h1>
-        
-        <section class="input-section">
-            <div class="input-columns">
-                <div class="input-column">
-                    <h2>Income & Bills</h2>
-                    <div class="input-group">
-                        <label for="monthly-income">Monthly Income:</label>
-                        <input type="number" id="monthly-income" placeholder="Enter monthly income">
-                    </div>
-                    
-                    <div class="input-group">
-                        <label for="income-date">Income Payment Date:</label>
-                        <input type="date" id="income-date" value="${luxon.DateTime.local().toISODate()}">
-                    </div>
+    <header>
+        <h1>Finance Tracker</h1>
+        <p>Track your income, expenses, and savings goals.</p>
+    </header>
 
-                    <div class="input-group">
-                        <label for="monthly-bills">Monthly Bills:</label>
-                        <input type="number" id="monthly-bills" placeholder="Enter monthly bills">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="bills-paid">
-                            Bills Paid This Month
-                        </label>
-                    </div>
-                </div>
-
-                <div class="input-column">
-                    <h2>Current Balances</h2>
-                    <div class="input-group">
-                        <label for="bank-balance">Bank Balance:</label>
-                        <input type="number" id="bank-balance" placeholder="Bank balance">
-                    </div>
-                    <div class="input-group">
-                        <label for="cash-balance">Cash Balance:</label>
-                        <input type="number" id="cash-balance" placeholder="Cash balance">
-                    </div>
-                </div>
-
-                <div class="input-column">
-                    <h2>Living Situation</h2>
-                    <div class="family-support">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="live-with-family">
-                            Live with Family
-                        </label>
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="family-support-food">
-                            Family Supports Food
-                        </label>
-                    </div>
-                    
-                    <div class="saving-controls">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="enable-saving">
-                            Enable Savings Mode (%)
-                        </label>
-                        <input type="number" id="saving-percent" min="0" max="100" value="20" 
-                               placeholder="Savings percentage" disabled>
-                    </div>
-                </div>
+    <main class="container">
+        <section id="income-section">
+            <h2>Income</h2>
+            <div class="input-group">
+                <label for="income">Monthly Income:</label>
+                <input type="number" id="income" placeholder="Enter your income">
+            </div>
+            <div class="input-group">
+                <label for="income-date">Income Payment Date:</label>
+                <input type="date" id="income-date">
             </div>
         </section>
 
-        <section class="calendar-section">
-            <h2>Financial Calendar</h2>
-            <div class="calendar-header">
-                <button id="prev-month">&lt;</button>
-                <h3 id="current-month">${luxon.DateTime.local().toFormat('MMMM yyyy')}</h3>
-                <button id="next-month">&gt;</button>
+        <section id="expenses-section">
+            <h2>Expenses</h2>
+            <div id="expenses-list">
+                <!-- Expenses will be added here dynamically -->
             </div>
-            <div class="calendar" id="calendar"></div>
-            <div class="plan-controls">
-                <button id="plan-button" class="primary">Generate Financial Plan</button>
-                <div id="savings-summary"></div>
+            <button id="add-expense-button">Add Expense</button>
+        </section>
+
+        <section id="savings-section">
+            <h2>Savings Goals</h2>
+            <div class="input-group">
+                <label for="savings-goal">Savings Goal:</label>
+                <input type="number" id="savings-goal" placeholder="Enter your savings goal">
+            </div>
+            <div class="input-group">
+                <label for="savings-target-date">Target Date:</label>
+                <input type="date" id="savings-target-date">
+            </div>
+            <div id="savings-summary">
+                <!-- Savings summary will be added here dynamically -->
             </div>
         </section>
 
-        <section class="metrics-section">
-            <div class="metric-column">
-                <h2>Balance Overview</h2>
-                <canvas id="balanceChart"></canvas>
-            </div>
-            <div class="metric-column">
-                <h2>Spending Analysis</h2>
-                <canvas id="expenseChart"></canvas>
+        <section id="summary-section">
+            <h2>Financial Summary</h2>
+            <div id="summary">
+                <!-- Summary will be added here dynamically -->
             </div>
         </section>
 
-        <div class="action-buttons">
-            <button id="save-button" class="secondary">Save Session</button>
-            <button id="download-button" class="secondary">Export Data (CSV)</button>
-        </div>
+        <section id="suggestions-section">
+            <h2>Suggestions</h2>
+            <div id="suggestions">
+                <!-- Suggestions will be added here dynamically -->
+            </div>
+        </section>
+    </main>
 
-        <div id="status-bar"></div>
-    </div>
+    <footer>
+        <p>&copy; 2024 Finance Tracker</p>
+    </footer>
 
     <script src="index.js"></script>
 </body>
