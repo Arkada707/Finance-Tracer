@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const savingsSummary = document.getElementById('savings-summary');
     const summarySection = document.getElementById('summary');
     const suggestionsSection = document.getElementById('suggestions');
+    const balanceMeterFill = document.getElementById('balance-fill');
+    const balanceAmount = document.getElementById('balance-amount');
+    const calendar = document.getElementById('calendar');
+    const spendingChartCanvas = document.getElementById('spending-chart');
 
     // Initialize data
     let expenses = [];
@@ -16,6 +20,17 @@ document.addEventListener('DOMContentLoaded', () => {
     let targetDate = null;
     let income = 0;
     let incomeDate = null;
+    let currentMonth = new Date();
+
+    // Function to update the balance meter
+    const updateBalanceMeter = () => {
+        const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+        const remainingBalance = income - totalExpenses;
+        const percentage = income > 0 ? Math.max(0, Math.min(1, remainingBalance / income)) * 100 : 0;
+
+        balanceMeterFill.style.width = `${percentage}%`;
+        balanceAmount.textContent = `$${remainingBalance.toFixed(2)}`;
+    };
 
     // Function to add an expense
     const addExpense = () => {
@@ -27,10 +42,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        expenses.push({ name: expenseName, amount: expenseAmount });
+        expenses.push({ name: expenseName, amount: expenseAmount, date: incomeDate });
         renderExpenses();
         updateSummary();
         updateSuggestions();
+        updateBalanceMeter();
+        updateSpendingChart();
+        renderCalendar();
     };
 
     // Function to render expenses
@@ -52,6 +70,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 renderExpenses();
                 updateSummary();
                 updateSuggestions();
+                updateBalanceMeter();
+                updateSpendingChart();
+                renderCalendar();
             });
         });
     };
@@ -134,10 +155,109 @@ document.addEventListener('DOMContentLoaded', () => {
         suggestionsSection.innerHTML = suggestionsHTML;
     };
 
+    // Function to render the calendar
+    const renderCalendar = () => {
+        calendar.innerHTML = '';
+        const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+        const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+        const daysInMonth = lastDay.getDate();
+        const startingDay = firstDay.getDay(); // 0 (Sunday) to 6 (Saturday)
+
+        // Add empty days for the beginning of the month
+        for (let i = 0; i < startingDay; i++) {
+            const dayElement = document.createElement('div');
+            calendar.appendChild(dayElement);
+        }
+
+        // Add days for the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dayElement = document.createElement('div');
+            dayElement.classList.add('calendar-day');
+            dayElement.textContent = day;
+
+            // Color-code the day based on spending
+            const spendingAmount = calculateDailySpending(day);
+            if (spendingAmount === 0) {
+                dayElement.classList.add('low-spending');
+            } else if (spendingAmount <= 50) {
+                dayElement.classList.add('moderate-spending');
+            } else {
+                dayElement.classList.add('high-spending');
+            }
+
+            calendar.appendChild(dayElement);
+        }
+    };
+
+    // Function to calculate daily spending
+    const calculateDailySpending = (day) => {
+        const expensesForDay = expenses.filter(expense => {
+            const expenseDate = new Date(expense.date);
+            return expenseDate.getDate() === day && expenseDate.getMonth() === currentMonth.getMonth() && expenseDate.getFullYear() === currentMonth.getFullYear();
+        });
+        return expensesForDay.reduce((sum, expense) => sum + expense.amount, 0);
+    };
+
+    // Function to update the spending chart
+    const updateSpendingChart = () => {
+        // Group expenses by category (for a more detailed chart, you'd categorize expenses)
+        const categoryExpenses = {};
+        expenses.forEach(expense => {
+            const category = expense.name; // Assuming expense name is the category
+            categoryExpenses[category] = (categoryExpenses[category] || 0) + expense.amount;
+        });
+
+        const categories = Object.keys(categoryExpenses);
+        const amounts = Object.values(categoryExpenses);
+
+        // Create or update the chart
+        if (window.spendingChart) {
+            window.spendingChart.data.labels = categories;
+            window.spendingChart.data.datasets[0].data = amounts;
+            window.spendingChart.update();
+        } else {
+            const ctx = spendingChartCanvas.getContext('2d');
+            window.spendingChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: categories,
+                    datasets: [{
+                        data: amounts,
+                        backgroundColor: [
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                            'rgba(255, 159, 64, 0.7)'
+                        ],
+                        borderColor: 'rgba(255, 255, 255, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Spending by Category'
+                        }
+                    }
+                }
+            });
+        }
+    };
+
     // Event listeners
     addExpenseButton.addEventListener('click', addExpense);
-    incomeInput.addEventListener('input', updateSummary);
-    incomeDateInput.addEventListener('input', updateSummary);
+    incomeInput.addEventListener('input', () => {
+        updateSummary();
+        updateBalanceMeter();
+        updateSuggestions();
+    });
+    incomeDateInput.addEventListener('input', () => {
+        updateSummary();
+        updateBalanceMeter();
+    });
     savingsGoalInput.addEventListener('input', updateSavingsSummary);
     savingsTargetDateInput.addEventListener('input', updateSavingsSummary);
 
@@ -145,4 +265,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateSummary();
     updateSavingsSummary();
     updateSuggestions();
+    updateBalanceMeter();
+    renderCalendar();
+    updateSpendingChart();
 });

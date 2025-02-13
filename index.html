@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Tracker</title>
     <link rel="stylesheet" href="index.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <header>
@@ -13,6 +14,14 @@
     </header>
 
     <main class="container">
+        <section id="balance-section">
+            <h2>Balance</h2>
+            <div id="balance-meter">
+                <div id="balance-fill"></div>
+            </div>
+            <div id="balance-amount"></div>
+        </section>
+
         <section id="income-section">
             <h2>Income</h2>
             <div class="input-group">
@@ -31,6 +40,13 @@
                 <!-- Expenses will be added here dynamically -->
             </div>
             <button id="add-expense-button">Add Expense</button>
+        </section>
+
+        <section id="calendar-section">
+            <h2>Calendar</h2>
+            <div id="calendar">
+                <!-- Calendar will be added here dynamically -->
+            </div>
         </section>
 
         <section id="savings-section">
@@ -53,6 +69,11 @@
             <div id="summary">
                 <!-- Summary will be added here dynamically -->
             </div>
+        </section>
+
+        <section id="chart-section">
+            <h2>Spending Chart</h2>
+            <canvas id="spending-chart"></canvas>
         </section>
 
         <section id="suggestions-section">

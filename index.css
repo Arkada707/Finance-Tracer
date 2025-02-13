@@ -142,3 +142,229 @@ footer {
     border-top: 1px solid var(--border-color);
     margin-top: 20px;
 }
+
+/* Balance Meter */
+#balance-section {
+    margin-bottom: 20px;
+}
+
+#balance-meter {
+    width: 100%;
+    height: 20px;
+    background-color: #eee;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+#balance-fill {
+    height: 100%;
+    background-color: var(--success-color);
+    width: 0%;
+    transition: width 0.5s ease;
+}
+
+#balance-amount {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--text-color);
+    text-align: center;
+}
+
+/* Calendar */
+#calendar-section {
+    margin-bottom: 20px;
+}
+
+#calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 5px;
+}
+
+.calendar-day {
+    border: 1px solid var(--border-color);
+    padding: 5px;
+    text-align: center;
+    cursor: pointer;
+    background-color: #fff;
+    border-radius: 4px;
+    transition: background-color 0.3s ease;
+}
+
+.calendar-day:hover {
+    background-color: #f0f0f0;
+}
+
+.calendar-day.has-spending {
+    font-weight: bold;
+}
+
+.calendar-day.low-spending {
+    background-color: #c8e6c9; /* Light Green */
+}
+
+.calendar-day.moderate-spending {
+    background-color: #ffecb3; /* Light Yellow */
+}
+
+.calendar-day.high-spending {
+    background-color: #ffcdd2; /* Light Red */
+}
+
+/* Chart */
+#chart-section {
+    margin-bottom: 20px;
+}
+
+#spending-chart {
+    max-width: 100%;
+    height: 300px;
+}
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --accent-color: #e74c3c;
+    --background-color: #f4f4f4;
+    --text-color: #2d3436;
+    --border-color: #bdc3c7;
+    --font-family: 'Arial', sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+header {
+    text-align: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 20px;
+}
+
+h1 {
+    color: var(--primary-color);
+    margin-bottom: 5px;
+}
+
+p {
+    color: #777;
+}
+
+h2 {
+    color: var(--secondary-color);
+    margin-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+    color: var(--text-color);
+}
+
+.input-group input[type="number"],
+.input-group input[type="date"],
+.input-group input[type="text"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.input-group input[type="number"]:focus,
+.input-group input[type="date"]:focus,
+.input-group input[type="text"]:focus {
+    border-color: var(--primary-color);
+    outline: none;
+}
+
+#expenses-list {
+    margin-bottom: 15px;
+}
+
+.expense-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 8px;
+    background-color: #f9f9f9;
+}
+
+.expense-item span {
+    font-weight: bold;
+    color: var(--text-color);
+}
+
+.expense-item button {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.expense-item button:hover {
+    background-color: #c0392b;
+}
+
+button {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+#savings-summary, #summary, #suggestions {
+    padding: 15px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 15px;
+    background-color: #f9f9f9;
+}
+
+footer {
+    text-align: center;
+    padding: 10px;
+    color: #777;
+    border-top: 1px solid var(--border-color);
+    margin-top: 20px;
+}
