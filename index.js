@@ -184,7 +184,7 @@ function loadFinancialState() {
 
     financialState = state;
     createCalendar();
-    updateCharts();
+    updateCharts(); // Update charts after loading data
     showStatus('Previous session restored!', 'success');
 }
 
@@ -257,6 +257,70 @@ document.getElementById('next-month').addEventListener('click', () => {
 
 document.getElementById('save-button').addEventListener('click', saveFinancialState);
 document.getElementById('download-button').addEventListener('click', exportToCSV);
+
+function initCharts() {
+    // Balance Chart (Doughnut)
+    const balanceCtx = document.getElementById('balanceChart').getContext('2d');
+    balanceChart = new Chart(balanceCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Bank', 'Cash'],
+            datasets: [{
+                data: [financialState.balances.bank, financialState.balances.cash],
+                backgroundColor: ['#4CAF50', '#2196F3']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Current Balance'
+                }
+            }
+        }
+    });
+
+    // Expense Chart (Pie)
+    const expenseCtx = document.getElementById('expenseChart').getContext('2d');
+    expenseChart = new Chart(expenseCtx, {
+        type: 'pie',
+        data: {
+            labels: [],
+            datasets: [{
+                data: [],
+                backgroundColor: []
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Expense Distribution'
+                }
+            }
+        }
+    });
+}
+
+function updateCharts() {
+    // Update Balance Chart
+    balanceChart.data.datasets[0].data = [financialState.balances.bank, financialState.balances.cash];
+    balanceChart.update();
+
+    // Update Expense Chart
+    const amounts = Object.values(financialState.spendingData);
+    const total = amounts.reduce((sum, num) => sum + num, 0);
+    
+    expenseChart.data.labels = Object.keys(financialState.spendingData).map(d => `Day ${d}`);
+    expenseChart.data.datasets[0].data = amounts;
+    expenseChart.data.datasets[0].backgroundColor = amounts.map(() => 
+        `#${Math.floor(Math.random()*16777215).toString(16)}`
+    );
+    
+    expenseChart.update();
+}
 
 // Initialize
 function init() {
