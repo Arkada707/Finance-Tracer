@@ -184,6 +184,7 @@ function loadFinancialState() {
 
     financialState = state;
     createCalendar();
+    initCharts(); // Initialize charts before updating
     updateCharts(); // Update charts after loading data
     showStatus('Previous session restored!', 'success');
 }
